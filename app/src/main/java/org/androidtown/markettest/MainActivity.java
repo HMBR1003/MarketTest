@@ -1,6 +1,9 @@
 package org.androidtown.markettest;
 
 import android.annotation.SuppressLint;
+import android.app.ProgressDialog;
+import android.content.Intent;
+import android.databinding.DataBindingUtil;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -9,181 +12,269 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.util.SparseArrayCompat;
 import android.support.v4.view.ViewPager;
+import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.AbsListView;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.signature.StringSignature;
+import com.firebase.ui.storage.images.FirebaseImageLoader;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+
+import org.androidtown.markettest.databinding.ActivityMainBinding;
 
 @SuppressLint("NewApi")
-public class MainActivity extends FragmentActivity implements ScrollTabHolder, ViewPager.OnPageChangeListener {
-	
-	public static final boolean NEEDS_PROXY = Integer.valueOf(Build.VERSION.SDK_INT).intValue() < 11;
-	
-	private View mHeader;
+public class MainActivity extends AppCompatActivity implements ScrollTabHolder, ViewPager.OnPageChangeListener {
 
-	private PagerSlidingTabStrip mPagerSlidingTabStrip;
-	private ViewPager mViewPager;
-	private PagerAdapter mPagerAdapter;
+    public static final boolean NEEDS_PROXY = Integer.valueOf(Build.VERSION.SDK_INT).intValue() < 11;
 
-	private int mMinHeaderHeight;
-	private int mHeaderHeight;
-	private int mMinHeaderTranslation;
-	
-	private TextView info;
-	private int mLastY;
-	
-	@Override
-	protected void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		setContentView(R.layout.activity_main);
+    private View mHeader;
 
-		mMinHeaderHeight = getResources().getDimensionPixelSize(R.dimen.min_header_height);
-		mHeaderHeight = getResources().getDimensionPixelSize(R.dimen.header_height);
-		mMinHeaderTranslation = -mMinHeaderHeight;
+    private PagerSlidingTabStrip mPagerSlidingTabStrip;
+    private ViewPager mViewPager;
+    private PagerAdapter mPagerAdapter;
+
+    private int mMinHeaderHeight;
+    private int mHeaderHeight;
+    private int mMinHeaderTranslation;
+
+    private TextView info;
+    private int mLastY;
+
+    String uid;
+    ActivityMainBinding binding;
+    ValueEventListener listener;
+    ProgressDialog dialog;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        binding = DataBindingUtil.setContentView(this, R.layout.activity_main);
+
+        dialog = new ProgressDialog(MainActivity.this);
+        dialog.setProgress(ProgressDialog.STYLE_SPINNER);
+        dialog.setMessage("데이터를 불러오는 중입니다...");
+        dialog.setCancelable(false);
+        dialog.show();
+
+        Intent intent = getIntent();
+        uid = intent.getStringExtra("uid");
+        mMinHeaderHeight = getResources().getDimensionPixelSize(R.dimen.min_header_height);
+        mHeaderHeight = getResources().getDimensionPixelSize(R.dimen.header_height);
+        mMinHeaderTranslation = -mMinHeaderHeight;
 
 
+        mHeader = findViewById(R.id.header);
+        info = (TextView) findViewById(R.id.info);
 
-		mHeader = findViewById(R.id.header);
-		info = (TextView) findViewById(R.id.info);
+        mPagerSlidingTabStrip = (PagerSlidingTabStrip) findViewById(R.id.tabs);
+        mViewPager = (ViewPager) findViewById(R.id.pager);
+        mViewPager.setOffscreenPageLimit(3);
 
-		mPagerSlidingTabStrip = (PagerSlidingTabStrip) findViewById(R.id.tabs);
-		mViewPager = (ViewPager) findViewById(R.id.pager);
-		mViewPager.setOffscreenPageLimit(3);
+        mPagerAdapter = new PagerAdapter(getSupportFragmentManager());
+        mPagerAdapter.setTabHolderScrollingContent(this);
 
-		mPagerAdapter = new PagerAdapter(getSupportFragmentManager());
-		mPagerAdapter.setTabHolderScrollingContent(this);
+        mViewPager.setAdapter(mPagerAdapter);
 
-		mViewPager.setAdapter(mPagerAdapter);
+        mPagerSlidingTabStrip.setViewPager(mViewPager);
+        mPagerSlidingTabStrip.setOnPageChangeListener(this);
+        mLastY = 0;
 
-		mPagerSlidingTabStrip.setViewPager(mViewPager);
-		mPagerSlidingTabStrip.setOnPageChangeListener(this);
-		mLastY=0;
-	}
+        uid = "slwVsecqtTO3RDjzPxBWrFekbEd2";
+        FirebaseDatabase.getInstance().getReference().child("market").child(uid).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                MarketList market = dataSnapshot.getValue(MarketList.class);
 
-	@Override
-	public void onPageScrollStateChanged(int arg0) {
-		// nothing
-	}
-	
-	@Override
-	public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+                binding.marketNameText.setText(market.marketName);
+                binding.tellText.setText(market.marketTel);
+                binding.minPriceText.setText(market.minPrice);
+                String address1 = market.marketAddress1.substring(7)+ "\n" + market.marketAddress2;
+                binding.marketAdressText.setText(address1);
+                StorageReference ref = FirebaseStorage.getInstance().getReference().child("market").child(uid).child(uid + ".jpg");
 
-		if (positionOffsetPixels > 0) {
-			int currentItem = mViewPager.getCurrentItem();
+                try {
+                    Glide
+                            .with(MainActivity.this)
+                            .using(new FirebaseImageLoader())
+                            .load(ref)
+                            .override(300, 300)
+                            .signature(new StringSignature(market.aTime))
+                            .placeholder(R.drawable.jamsil)
+                            .thumbnail(0.1f)
+                            .into(binding.marketImage);
 
-			SparseArrayCompat<ScrollTabHolder> scrollTabHolders = mPagerAdapter.getScrollTabHolders();
-			ScrollTabHolder currentHolder;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
 
-			if (position < currentItem) {
-				currentHolder = scrollTabHolders.valueAt(position);
-			} else {
-				currentHolder = scrollTabHolders.valueAt(position + 1);
-			}
+                dialog.dismiss();
+            }
 
-			if (NEEDS_PROXY) {
-				// TODO is not good
-				currentHolder.adjustScroll(mHeader.getHeight() - mLastY);
-				mHeader.postInvalidate();
-			} else {
-				currentHolder.adjustScroll((int) (mHeader.getHeight() + mHeader.getTranslationY()));
-			}
-		}
-	}
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                dialog.dismiss();
+                Toast.makeText(MainActivity.this, "데이터 가져오기 실패 에러 내용 : " + databaseError.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
 
-	@Override
-	public void onPageSelected(int position) {
-		SparseArrayCompat<ScrollTabHolder> scrollTabHolders = mPagerAdapter.getScrollTabHolders();
-		ScrollTabHolder currentHolder = scrollTabHolders.valueAt(position);
-		if(NEEDS_PROXY){
-			//TODO is not good 
-			currentHolder.adjustScroll(mHeader.getHeight()-mLastY);
-			mHeader.postInvalidate();
-		}else{
-			currentHolder.adjustScroll((int) (mHeader.getHeight() +mHeader.getTranslationY()));	
-		}
-	}
 
-	@Override
-	public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount, int pagePosition) {
-		if (mViewPager.getCurrentItem() == pagePosition) {
-			int scrollY = getScrollY(view);
-			if(NEEDS_PROXY){
-				//TODO is not good 
-				mLastY=-Math.max(-scrollY, mMinHeaderTranslation);
-				info.setText(String.valueOf(scrollY));
-				mHeader.scrollTo(0, mLastY);
-				mHeader.postInvalidate();
-			}else{
-				mHeader.setTranslationY(Math.max(-scrollY, mMinHeaderTranslation));
-			}
-		}
-	}
+    @Override
+    public void onPageScrollStateChanged(int arg0) {
+        // nothing
+    }
 
-	@Override
-	public void adjustScroll(int scrollHeight) {
-		// nothing
-	}
+    @Override
+    public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
 
-	public int getScrollY(AbsListView view) {
-		View c = view.getChildAt(0);
-		if (c == null) {
-			return 0;
-		}
+        if (positionOffsetPixels > 0) {
+            int currentItem = mViewPager.getCurrentItem();
 
-		int firstVisiblePosition = view.getFirstVisiblePosition();
-		int top = c.getTop();
+            SparseArrayCompat<ScrollTabHolder> scrollTabHolders = mPagerAdapter.getScrollTabHolders();
+            ScrollTabHolder currentHolder;
 
-		int headerHeight = 0;
-		if (firstVisiblePosition >= 1) {
-			headerHeight = mHeaderHeight;
-		}
+            if (position < currentItem) {
+                currentHolder = scrollTabHolders.valueAt(position);
+            } else {
+                currentHolder = scrollTabHolders.valueAt(position + 1);
+            }
 
-		return -top + firstVisiblePosition * c.getHeight() + headerHeight;
-	}
+            if (NEEDS_PROXY) {
+                // TODO is not good
+                currentHolder.adjustScroll(mHeader.getHeight() - mLastY);
+                mHeader.postInvalidate();
+            } else {
+                currentHolder.adjustScroll((int) (mHeader.getHeight() + mHeader.getTranslationY()));
+            }
+        }
+    }
 
-	public static float clamp(float value, float max, float min) {
-		return Math.max(Math.min(value, min), max);
-	}
+    @Override
+    public void onPageSelected(int position) {
+        SparseArrayCompat<ScrollTabHolder> scrollTabHolders = mPagerAdapter.getScrollTabHolders();
+        ScrollTabHolder currentHolder = scrollTabHolders.valueAt(position);
+        if (NEEDS_PROXY) {
+            //TODO is not good
+            currentHolder.adjustScroll(mHeader.getHeight() - mLastY);
+            mHeader.postInvalidate();
+        } else {
+            currentHolder.adjustScroll((int) (mHeader.getHeight() + mHeader.getTranslationY()));
+        }
+    }
 
-	public class PagerAdapter extends FragmentPagerAdapter {
+    @Override
+    public void onScroll(View view, int firstVisibleItem, int visibleItemCount,
+                         int totalItemCount, int pagePosition) {
+        if (mViewPager.getCurrentItem() == pagePosition) {
+            int scrollY;
+            if (view instanceof AbsListView) {
+                scrollY = getScrollY((AbsListView) view);
+            } else {
+                scrollY = view.getScrollY();
+            }
+            if (NEEDS_PROXY) {
+                //TODO is not good
+                mLastY = -Math.max(-scrollY, mMinHeaderTranslation);
+                info.setText(String.valueOf(scrollY));
+                mHeader.scrollTo(0, mLastY);
+                mHeader.postInvalidate();
+            } else {
+                mHeader.setTranslationY(Math.max(-scrollY, mMinHeaderTranslation));
+            }
+        }
+    }
 
-		private SparseArrayCompat<ScrollTabHolder> mScrollTabHolders;
-		private final String[] TITLES = { "메뉴", "정보", "리뷰"};
-		private ScrollTabHolder mListener;
+    @Override
+    public void adjustScroll(int scrollHeight) {
+        // nothing
+    }
 
-		public PagerAdapter(FragmentManager fm) {
-			super(fm);
-			mScrollTabHolders = new SparseArrayCompat<ScrollTabHolder>();
-		}
+    public int getScrollY(AbsListView view) {
+        View c = view.getChildAt(0);
+        if (c == null) {
+            return 0;
+        }
 
-		public void setTabHolderScrollingContent(ScrollTabHolder listener) {
-			mListener = listener;
-		}
+        int firstVisiblePosition = view.getFirstVisiblePosition();
+        int top = c.getTop();
 
-		@Override
-		public CharSequence getPageTitle(int position) {
-			return TITLES[position];
-		}
+        int headerHeight = 0;
+        if (firstVisiblePosition >= 1) {
+            headerHeight = mHeaderHeight;
+        }
 
-		@Override
-		public int getCount() {
-			return TITLES.length;
-		}
+        return -top + firstVisiblePosition * c.getHeight() + headerHeight;
+    }
 
-		@Override
-		public Fragment getItem(int position) {
-			ScrollTabHolderFragment fragment = (ScrollTabHolderFragment) SampleListFragment.newInstance(position);
+    public static float clamp(float value, float max, float min) {
+        return Math.max(Math.min(value, min), max);
+    }
 
-			mScrollTabHolders.put(position, fragment);
-			if (mListener != null) {
-				fragment.setScrollTabHolder(mListener);
-			}
+    public class PagerAdapter extends FragmentPagerAdapter {
 
-			return fragment;
-		}
+        private SparseArrayCompat<ScrollTabHolder> mScrollTabHolders;
+        private final String[] TITLES = {"메뉴", "정보", "리뷰"};
+        private ScrollTabHolder mListener;
 
-		public SparseArrayCompat<ScrollTabHolder> getScrollTabHolders() {
-			return mScrollTabHolders;
-		}
+        public PagerAdapter(FragmentManager fm) {
+            super(fm);
+            mScrollTabHolders = new SparseArrayCompat<ScrollTabHolder>();
+        }
 
-	}
+        public void setTabHolderScrollingContent(ScrollTabHolder listener) {
+            mListener = listener;
+        }
+
+        @Override
+        public CharSequence getPageTitle(int position) {
+            return TITLES[position];
+        }
+
+        @Override
+        public int getCount() {
+            return TITLES.length;
+        }
+
+        @Override
+        public Fragment getItem(int position) {
+            ScrollTabHolderFragment fragment;
+            switch (position) {
+                case 0:
+                    fragment = (ScrollTabHolderFragment) MenuFragment.newInstance(position);
+                    break;
+                case 1:
+                    fragment = (ScrollTabHolderFragment) InfoFragment.newInstance(position);
+                    break;
+                case 2:
+                    fragment = (ScrollTabHolderFragment) ReviewFragment.newInstance(position);
+                    break;
+                default:
+                    fragment = null;
+                    break;
+
+            }
+
+
+            mScrollTabHolders.put(position, fragment);
+            if (mListener != null) {
+                fragment.setScrollTabHolder(mListener);
+            }
+
+            return fragment;
+        }
+
+        public SparseArrayCompat<ScrollTabHolder> getScrollTabHolders() {
+            return mScrollTabHolders;
+        }
+
+    }
 }
