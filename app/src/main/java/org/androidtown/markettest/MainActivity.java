@@ -51,7 +51,6 @@ public class MainActivity extends AppCompatActivity implements ScrollTabHolder, 
 
     String uid;
     ActivityMainBinding binding;
-    ValueEventListener listener;
     ProgressDialog dialog;
 
     @Override
@@ -249,7 +248,7 @@ public class MainActivity extends AppCompatActivity implements ScrollTabHolder, 
             ScrollTabHolderFragment fragment;
             switch (position) {
                 case 0:
-                    fragment = (ScrollTabHolderFragment) MenuFragment.newInstance(position);
+                    fragment = (ScrollTabHolderFragment) MenuFragment.newInstance(position,uid);
                     break;
                 case 1:
                     fragment = (ScrollTabHolderFragment) InfoFragment.newInstance(position);

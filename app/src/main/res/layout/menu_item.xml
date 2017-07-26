@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="200dp"
+    android:gravity="center">
+
+    <TextView
+        android:id="@+id/isMainText"
+        android:gravity="center"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="" />
+
+    <ImageView
+        android:id="@+id/menuImage"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:scaleType="fitXY"
+        android:src="@drawable/jamsil"/>
+
+    <TextView
+        android:id="@+id/menuName"
+        android:gravity="right"
+        android:layout_width="120dp"
+        android:layout_height="wrap_content"
+        android:hint="메뉴이름"/>
+
+    <TextView
+        android:id="@+id/menuPrice"
+        android:gravity="right"
+        android:layout_width="120dp"
+        android:layout_height="wrap_content"
+        android:hint="가격"/>
+
+</LinearLayout>

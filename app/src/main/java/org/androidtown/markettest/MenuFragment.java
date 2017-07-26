@@ -134,23 +134,35 @@ import android.view.ViewGroup;
 import android.widget.AbsListView;
 import android.widget.AbsListView.OnScrollListener;
 import android.widget.ArrayAdapter;
+import android.widget.GridView;
 import android.widget.ListView;
+
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 
-public class MenuFragment extends ScrollTabHolderFragment{
+import in.srain.cube.views.GridViewWithHeaderAndFooter;
+
+public class MenuFragment extends ScrollTabHolderFragment {
 
     private static final String ARG_POSITION = "position";
 
-    private ListView mListView;
-    private ArrayList<String> mListItems;
+    private GridViewWithHeaderAndFooter mListView;
+
+    MenuAdapter adapter;
 
     private int mPosition;
+    String marketId;
+    ValueEventListener listener;
 
-    public static Fragment newInstance(int position) {
+    public static Fragment newInstance(int position, String marketId) {
         MenuFragment f = new MenuFragment();
         Bundle b = new Bundle();
         b.putInt(ARG_POSITION, position);
+        b.putString("marketId", marketId);
         f.setArguments(b);
         return f;
     }
@@ -159,19 +171,21 @@ public class MenuFragment extends ScrollTabHolderFragment{
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mPosition = getArguments().getInt(ARG_POSITION);
+        marketId = getArguments().getString("marketId");
 
-        mListItems = new ArrayList<String>();
-
-        for (int i = 1; i <= 100; i++) {
-            mListItems.add(i + ". item - currnet page: " + (mPosition + 1));
-        }
+//        mListItems = new ArrayList<String>();
+//
+//        for (int i = 1; i <= 100; i++) {
+//            mListItems.add(i + ". item - currnet page: " + (mPosition + 1));
+//        }
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_menu, null);
 
-        mListView = (ListView) v.findViewById(R.id.menuListView);
+        adapter = new MenuAdapter(getContext());
+        mListView = (GridViewWithHeaderAndFooter) v.findViewById(R.id.menuListView);
 
         View placeHolderView = inflater.inflate(R.layout.view_header_placeholder, mListView, false);
         placeHolderView.setBackgroundColor(0xFFFFFFFF);
@@ -181,13 +195,62 @@ public class MenuFragment extends ScrollTabHolderFragment{
     }
 
     @Override
+    public void onStop() {
+        FirebaseDatabase.getInstance().getReference().child("market").child(marketId).child("menu").removeEventListener(listener);
+        super.onStop();
+    }
+
+    @Override
+    public void onResume() {
+        FirebaseDatabase.getInstance().getReference().child("market").child(marketId).child("menu").addValueEventListener(listener);
+        super.onResume();
+    }
+
+    @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
         mListView.setOnScrollListener(new OnScroll());
-        mListView.setAdapter(new ArrayAdapter<String>(getActivity(), R.layout.list_item, android.R.id.text1, mListItems));
+        mListView.setAdapter(adapter);
 
-        if(MainActivity.NEEDS_PROXY){//in my moto phone(android 2.1),setOnScrollListener do not work well
+        listener = new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                if (dataSnapshot != null) {
+                    adapter.clear();
+                    int i = 0;
+                    MenuInfo menuInfo;
+                    MenuItem items[] = new MenuItem[(int) dataSnapshot.getChildrenCount()];
+                    for (DataSnapshot data : dataSnapshot.getChildren()) {
+                        menuInfo = data.getValue(MenuInfo.class);
+                        items[i++] = new MenuItem(menuInfo.aTime, menuInfo.menuName, menuInfo.menuPrice, data.getKey(), marketId, menuInfo.isMain, menuInfo.aseq);
+                    }
+                    //메뉴 순서대로 리스트에 추가
+                    for (int iii = 1; iii < dataSnapshot.getChildrenCount() + 1; iii++) {
+                        for (int jjj = 0; jjj < dataSnapshot.getChildrenCount(); jjj++) {
+                            if (items[jjj].aseq == iii) {
+                                adapter.add(items[jjj]);
+                                break;
+                            }
+                        }
+                    }
+
+                    adapter.notifyDataSetChanged();
+                } else {
+
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        };
+
+
+//        mListView.setAdapter(new ArrayAdapter<String>(getActivity(), R.layout.list_item, android.R.id.text1, mListItems));
+
+        if (MainActivity.NEEDS_PROXY) {//in my moto phone(android 2.1),setOnScrollListener do not work well
             mListView.setOnTouchListener(new OnTouchListener() {
                 @Override
                 public boolean onTouch(View v, MotionEvent event) {
@@ -204,8 +267,8 @@ public class MenuFragment extends ScrollTabHolderFragment{
         if (scrollHeight == 0 && mListView.getFirstVisiblePosition() >= 1) {
             return;
         }
-
-        mListView.setSelectionFromTop(1, scrollHeight);
+//
+//        mListView.setSelectionFromTop(1, scrollHeight);
 
     }
 
