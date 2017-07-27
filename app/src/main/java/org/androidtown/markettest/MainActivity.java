@@ -13,6 +13,7 @@ import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.util.SparseArrayCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 import android.widget.AbsListView;
@@ -48,6 +49,8 @@ public class MainActivity extends AppCompatActivity implements ScrollTabHolder, 
 
     private TextView info;
     private int mLastY;
+    int rowWidth;
+    public static String marketTel;
 
     String uid;
     ActivityMainBinding binding;
@@ -63,6 +66,10 @@ public class MainActivity extends AppCompatActivity implements ScrollTabHolder, 
         dialog.setMessage("데이터를 불러오는 중입니다...");
         dialog.setCancelable(false);
         dialog.show();
+
+        DisplayMetrics mMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(mMetrics);
+        rowWidth = (mMetrics.widthPixels) / 2;
 
         Intent intent = getIntent();
         uid = intent.getStringExtra("uid");
@@ -94,8 +101,9 @@ public class MainActivity extends AppCompatActivity implements ScrollTabHolder, 
                 MarketList market = dataSnapshot.getValue(MarketList.class);
 
                 binding.marketNameText.setText(market.marketName);
+                marketTel = market.marketTel;
                 binding.tellText.setText(market.marketTel);
-                binding.minPriceText.setText(market.minPrice);
+                binding.minPriceText.setText(numToWon(Integer.parseInt(market.minPrice))+"원");
                 String address1 = market.marketAddress1.substring(7)+ "\n" + market.marketAddress2;
                 binding.marketAdressText.setText(address1);
                 StorageReference ref = FirebaseStorage.getInstance().getReference().child("market").child(uid).child(uid + ".jpg");
@@ -126,6 +134,36 @@ public class MainActivity extends AppCompatActivity implements ScrollTabHolder, 
         });
     }
 
+
+    public String numToWon(int num){
+        String tmp = num+"";
+        String won;
+        if(tmp.length()>3){
+            int a = tmp.length()%3;
+            int b = tmp.length()/3;
+            if(a!=0) {
+                String first = tmp.substring(0, a);
+                won = first;
+                for(int i =0; i<b; i++){
+                    won = won+","+ tmp.substring(a,a+3);
+                    a=a+3;
+                }
+            }
+            else{
+                a=3;
+                String first = tmp.substring(0, a);
+                won = first;
+                for(int i =0; i<b-1; i++){
+                    won = won+","+ tmp.substring(a,a+3);
+                    a=a+3;
+                }
+            }
+        }
+        else{
+            won = tmp;
+        }
+        return won;
+    }
 
     @Override
     public void onPageScrollStateChanged(int arg0) {
@@ -248,10 +286,10 @@ public class MainActivity extends AppCompatActivity implements ScrollTabHolder, 
             ScrollTabHolderFragment fragment;
             switch (position) {
                 case 0:
-                    fragment = (ScrollTabHolderFragment) MenuFragment.newInstance(position,uid);
+                    fragment = (ScrollTabHolderFragment) MenuFragment.newInstance(position,uid,rowWidth);
                     break;
                 case 1:
-                    fragment = (ScrollTabHolderFragment) InfoFragment.newInstance(position,uid);
+                    fragment = (ScrollTabHolderFragment) ReviewFragment.newInstance(position,uid);
                     break;
                 default:
                     fragment = null;

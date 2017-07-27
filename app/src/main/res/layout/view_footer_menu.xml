@@ -2,10 +2,10 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
 	android:layout_width="match_parent"
 	android:layout_height="wrap_content"
-	android:paddingTop="500dp" >
+	android:paddingTop="200dp" >
 	
 	<TextView
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content"
-		android:text="안녕하세요오오오"/>
+		android:text="메뉴 푸터"/>
 </FrameLayout>

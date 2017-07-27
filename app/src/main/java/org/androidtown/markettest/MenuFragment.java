@@ -124,6 +124,8 @@
 //}
 package org.androidtown.markettest;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -136,33 +138,39 @@ import android.widget.AbsListView.OnScrollListener;
 import android.widget.ArrayAdapter;
 import android.widget.GridView;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import org.androidtown.markettest.databinding.FragmentMenuBinding;
+
 import java.util.ArrayList;
 
 import in.srain.cube.views.GridViewWithHeaderAndFooter;
 
+import static org.androidtown.markettest.MainActivity.marketTel;
+
 public class MenuFragment extends ScrollTabHolderFragment {
-
-    private static final String ARG_POSITION = "position";
-
-    private GridViewWithHeaderAndFooter mListView;
+    private FragmentMenuBinding binding;
 
     MenuAdapter adapter;
 
     private int mPosition;
     String marketId;
     ValueEventListener listener;
+    int imageWidth;
 
-    public static Fragment newInstance(int position, String marketId) {
+    GridViewWithHeaderAndFooter menuListView;
+
+    public static Fragment newInstance(int position, String marketId, int imageWidth) {
         MenuFragment f = new MenuFragment();
         Bundle b = new Bundle();
-        b.putInt(ARG_POSITION, position);
+        b.putInt("position", position);
         b.putString("marketId", marketId);
+        b.putInt("imageWidth",imageWidth);
         f.setArguments(b);
         return f;
     }
@@ -170,31 +178,27 @@ public class MenuFragment extends ScrollTabHolderFragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mPosition = getArguments().getInt(ARG_POSITION);
+        mPosition = getArguments().getInt("position");
         marketId = getArguments().getString("marketId");
-
-//        mListItems = new ArrayList<String>();
-//
-//        for (int i = 1; i <= 100; i++) {
-//            mListItems.add(i + ". item - currnet page: " + (mPosition + 1));
-//        }
+        imageWidth = getArguments().getInt("imageWidth");
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View v = inflater.inflate(R.layout.fragment_menu, null);
+        ViewGroup rootView = (ViewGroup)inflater.inflate(R.layout.fragment_menu,container,false);
 
-        adapter = new MenuAdapter(getContext());
-        mListView = (GridViewWithHeaderAndFooter) v.findViewById(R.id.menuListView);
+        menuListView = (GridViewWithHeaderAndFooter)rootView.findViewById(R.id.menuListView);
 
-        View placeHolderView = inflater.inflate(R.layout.view_header_placeholder, mListView, false);
+        adapter = new MenuAdapter(getContext(),imageWidth);
+
+        View placeHolderView = inflater.inflate(R.layout.view_header_menu, menuListView, false);
         placeHolderView.setBackgroundColor(0xFFFFFFFF);
-        mListView.addHeaderView(placeHolderView);
+        menuListView.addHeaderView(placeHolderView);
 
-        View placefooterView = inflater.inflate(R.layout.view_footer_placeholder, mListView, false);
+        View placefooterView = inflater.inflate(R.layout.view_footer_menu, menuListView, false);
         placefooterView.setBackgroundColor(0xFFFFFFFF);
-        mListView.addFooterView(placefooterView);
-        return v;
+        menuListView.addFooterView(placefooterView);
+        return rootView;
     }
 
     @Override
@@ -209,24 +213,58 @@ public class MenuFragment extends ScrollTabHolderFragment {
         super.onResume();
     }
 
+    public String numToWon(int num){
+        String tmp = num+"";
+        String won;
+        if(tmp.length()>3){
+            int a = tmp.length()%3;
+            int b = tmp.length()/3;
+            if(a!=0) {
+                String first = tmp.substring(0, a);
+                won = first;
+                for(int i =0; i<b; i++){
+                    won = won+","+ tmp.substring(a,a+3);
+                    a=a+3;
+                }
+            }
+            else{
+                a=3;
+                String first = tmp.substring(0, a);
+                won = first;
+                for(int i =0; i<b-1; i++){
+                    won = won+","+ tmp.substring(a,a+3);
+                    a=a+3;
+                }
+            }
+        }
+        else{
+            won = tmp;
+        }
+        return won;
+    }
+
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+        binding = FragmentMenuBinding.bind(getView());
 
-        mListView.setOnScrollListener(new OnScroll());
-        mListView.setAdapter(adapter);
+        menuListView.setOnScrollListener(new OnScroll());
+        menuListView.setAdapter(adapter);
 
         listener = new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 if (dataSnapshot != null) {
+                    binding.noMenuContainer.setVisibility(View.GONE);
+                    menuListView.setVisibility(View.VISIBLE);
+
                     adapter.clear();
                     int i = 0;
                     MenuInfo menuInfo;
                     MenuItem items[] = new MenuItem[(int) dataSnapshot.getChildrenCount()];
                     for (DataSnapshot data : dataSnapshot.getChildren()) {
                         menuInfo = data.getValue(MenuInfo.class);
-                        items[i++] = new MenuItem(menuInfo.aTime, menuInfo.menuName, menuInfo.menuPrice, data.getKey(), marketId, menuInfo.isMain, menuInfo.aseq);
+                        items[i++] = new MenuItem(menuInfo.aTime, menuInfo.menuName, numToWon(Integer.parseInt(menuInfo.menuPrice))+"원", data.getKey(), marketId, menuInfo.isMain, menuInfo.aseq);
                     }
                     //메뉴 순서대로 리스트에 추가
                     for (int iii = 1; iii < dataSnapshot.getChildrenCount() + 1; iii++) {
@@ -240,7 +278,8 @@ public class MenuFragment extends ScrollTabHolderFragment {
 
                     adapter.notifyDataSetChanged();
                 } else {
-
+                    binding.noMenuContainer.setVisibility(View.VISIBLE);
+                    menuListView.setVisibility(View.GONE);
                 }
             }
 
@@ -250,15 +289,23 @@ public class MenuFragment extends ScrollTabHolderFragment {
             }
         };
 
+        binding.callButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:"+marketTel));
+                startActivity(intent);
+            }
+        });
+
 
 //        mListView.setAdapter(new ArrayAdapter<String>(getActivity(), R.layout.list_item, android.R.id.text1, mListItems));
 
         if (MainActivity.NEEDS_PROXY) {//in my moto phone(android 2.1),setOnScrollListener do not work well
-            mListView.setOnTouchListener(new OnTouchListener() {
+            menuListView.setOnTouchListener(new OnTouchListener() {
                 @Override
                 public boolean onTouch(View v, MotionEvent event) {
                     if (mScrollTabHolder != null)
-                        mScrollTabHolder.onScroll(mListView, 0, 0, 0, mPosition);
+                        mScrollTabHolder.onScroll(menuListView, 0, 0, 0, mPosition);
                     return false;
                 }
             });
@@ -267,9 +314,11 @@ public class MenuFragment extends ScrollTabHolderFragment {
 
     @Override
     public void adjustScroll(int scrollHeight) {
-        if (scrollHeight == 0 && mListView.getFirstVisiblePosition() >= 1) {
+        if (scrollHeight == 0 && menuListView.getFirstVisiblePosition() >= 1) {
             return;
         }
+
+        menuListView.setSelection(1);
 //
 //        mListView.setSelectionFromTop(1, scrollHeight);
 

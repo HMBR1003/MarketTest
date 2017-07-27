@@ -17,7 +17,7 @@ public class MenuItemView extends LinearLayout{
     private TextView menuName;
     private TextView menuPrice;
     private ImageView menuImage;
-
+    private LinearLayout itemContainer;
     public MenuItemView(Context context) {
         super(context);
         init(context);
@@ -31,6 +31,7 @@ public class MenuItemView extends LinearLayout{
         menuName=(TextView)findViewById(R.id.menuName);
         menuPrice=(TextView)findViewById(R.id.menuPrice);
         menuImage=(ImageView)findViewById(R.id.menuImage);
+        itemContainer=(LinearLayout)findViewById(R.id.itemContainer);
     }
 
     public void setMenuName(String menuName){
@@ -43,6 +44,18 @@ public class MenuItemView extends LinearLayout{
 
     public ImageView getMenuImage(){
         return menuImage;
+    }
+
+    public LinearLayout getItemContainer(){
+        return itemContainer;
+    }
+
+    public TextView getMenuName(){
+        return menuName;
+    }
+
+    public TextView getMenuPrice(){
+        return menuPrice;
     }
 
     public void setIsMainText(){

@@ -1,69 +1,85 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical">
+<layout>
 
-    <!--<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"-->
-    <!--android:id="@+id/menuScrollView"-->
-    <!--android:layout_width="match_parent"-->
-    <!--android:layout_height="wrap_content"-->
-    <!--android:scrollbars="none">-->
-
-    <!--<LinearLayout-->
-    <!--android:layout_width="match_parent"-->
-    <!--android:layout_height="wrap_content"-->
-    <!--android:orientation="vertical">-->
-
-    <!--<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"-->
-    <!--android:layout_width="match_parent"-->
-    <!--android:layout_height="wrap_content"-->
-    <!--android:paddingTop="@dimen/header_height" />-->
-
-    <!--</LinearLayout>-->
-
-    <!--</ScrollView>-->
-    <!--<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"-->
-    <!--android:layout_width="match_parent"-->
-    <!--android:layout_height="wrap_content"-->
-    <!--android:paddingTop="@dimen/header_height" />-->
-
-    <in.srain.cube.views.GridViewWithHeaderAndFooter
-        android:id="@+id/menuListView"
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:numColumns="2"
-        android:scrollbars="none" />
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-
-        <LinearLayout
-            android:layout_width="wrap_content"
+        <FrameLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="3"
-            android:layout_margin="5dp">
+            android:layout_weight="1">
 
-            <info.hoang8f.widget.FButton
+            <LinearLayout
+                android:id="@+id/noMenuContainer"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
+
+                <include
+                    layout="@layout/view_header_menu"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/noReviewText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:text="아직 메뉴가 없습니다!"
+                        android:textSize="30dp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <in.srain.cube.views.GridViewWithHeaderAndFooter
+                android:id="@+id/menuListView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="전화하기" />
+                android:layout_weight="1"
+                android:numColumns="2"
+                android:scrollbars="none"
+                android:visibility="gone" />
+        </FrameLayout>
 
-        </LinearLayout>
 
         <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="7"
-            android:layout_margin="5dp">
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
-            <info.hoang8f.widget.FButton
-                android:layout_width="match_parent"
+            <LinearLayout
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="장바구니" />
+                android:layout_margin="5dp"
+                android:layout_weight="3">
 
+                <info.hoang8f.widget.FButton
+                    android:id="@+id/callButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="전화하기" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="5dp"
+                android:layout_weight="7">
+
+                <info.hoang8f.widget.FButton
+                    android:id="@+id/cartButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="장바구니" />
+
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
-</LinearLayout>
+</layout>
