@@ -76,7 +76,7 @@ public class MainActivity extends AppCompatActivity implements ScrollTabHolder, 
 
         mPagerSlidingTabStrip = (PagerSlidingTabStrip) findViewById(R.id.tabs);
         mViewPager = (ViewPager) findViewById(R.id.pager);
-        mViewPager.setOffscreenPageLimit(3);
+        mViewPager.setOffscreenPageLimit(2);
 
         mPagerAdapter = new PagerAdapter(getSupportFragmentManager());
         mPagerAdapter.setTabHolderScrollingContent(this);
@@ -221,7 +221,7 @@ public class MainActivity extends AppCompatActivity implements ScrollTabHolder, 
     public class PagerAdapter extends FragmentPagerAdapter {
 
         private SparseArrayCompat<ScrollTabHolder> mScrollTabHolders;
-        private final String[] TITLES = {"메뉴", "정보", "리뷰"};
+        private final String[] TITLES = {"메뉴","리뷰"};
         private ScrollTabHolder mListener;
 
         public PagerAdapter(FragmentManager fm) {
@@ -251,10 +251,7 @@ public class MainActivity extends AppCompatActivity implements ScrollTabHolder, 
                     fragment = (ScrollTabHolderFragment) MenuFragment.newInstance(position,uid);
                     break;
                 case 1:
-                    fragment = (ScrollTabHolderFragment) InfoFragment.newInstance(position);
-                    break;
-                case 2:
-                    fragment = (ScrollTabHolderFragment) ReviewFragment.newInstance(position);
+                    fragment = (ScrollTabHolderFragment) InfoFragment.newInstance(position,uid);
                     break;
                 default:
                     fragment = null;

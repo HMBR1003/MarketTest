@@ -191,6 +191,9 @@ public class MenuFragment extends ScrollTabHolderFragment {
         placeHolderView.setBackgroundColor(0xFFFFFFFF);
         mListView.addHeaderView(placeHolderView);
 
+        View placefooterView = inflater.inflate(R.layout.view_footer_placeholder, mListView, false);
+        placefooterView.setBackgroundColor(0xFFFFFFFF);
+        mListView.addFooterView(placefooterView);
         return v;
     }
 

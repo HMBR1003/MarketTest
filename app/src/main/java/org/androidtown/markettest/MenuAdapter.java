@@ -54,7 +54,7 @@ public class MenuAdapter extends BaseAdapter {
         MenuItemView view = new MenuItemView(context);
 
         view.setMenuName(item.menuName);
-        view.setMenuPrice(item.menuPrice);
+        view.setMenuPrice(item.menuPrice+"원");
         if(item.isMain){
             view.setIsMainText();
         }
